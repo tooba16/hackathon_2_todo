@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Todo App</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .input-section {
+      display: flex;
+      margin-bottom: 20px;
+    }
+
+    #task-input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px 0 0 4px;
+      font-size: 16px;
+    }
+
+    #add-task-btn {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 0 4px 4px 0;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #add-task-btn:hover {
+      background-color: #0056b3;
+    }
+
+    #task-list {
+      list-style-type: none;
+    }
+
+    .task-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+    }
+
+    .task-item.completed {
+      background-color: #e9ecef;
+    }
+
+    .task-item.completed .task-text {
+      text-decoration: line-through;
+      color: #6c757d;
+    }
+
+    .task-text {
+      flex: 1;
+      margin-right: 10px;
+      word-break: break-word;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 5px;
+    }
+
+    .edit-btn, .toggle-btn, .delete-btn {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .edit-btn {
+      background-color: #ffc107;
+      color: #212529;
+    }
+
+    .edit-btn:hover {
+      background-color: #e0a800;
+    }
+
+    .toggle-btn {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .toggle-btn:hover {
+      background-color: #218838;
+    }
+
+    .delete-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .delete-btn:hover {
+      background-color: #c82333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Simple Todo App</h1>
+    <div class="input-section">
+      <input type="text" id="task-input" placeholder="Enter a new task...">
+      <button id="add-task-btn">Add Task</button>
+    </div>
+    <ul id="task-list"></ul>
+  </div>
+
+  <script>
+    // Simple Todo App without agents
+    class TodoApp {
+      constructor() {
+        this.tasks = [];
+        this.taskId = 1;
+        this.taskInput = document.getElementById('task-input');
+        this.addTaskBtn = document.getElementById('add-task-btn');
+        this.taskList = document.getElementById('task-list');
+        
+        this.loadTasks();
+        this.setupEventListeners();
+        this.render();
+      }
+
+      setupEventListeners() {
+        // Add task button click
+        this.addTaskBtn.addEventListener('click', () => {
+          this.addTask();
+        });
+
+        // Enter key in input field
+        this.taskInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            this.addTask();
+          }
+        });
+      }
+
+      addTask() {
+        const taskText = this.taskInput.value.trim();
+        if (taskText) {
+          const task = {
+            id: this.taskId++,
+            text: taskText,
+            completed: false,
+            createdAt: new Date()
+          };
+
+          this.tasks.push(task);
+          this.saveTasks();
+          this.taskInput.value = '';
+          this.render();
+        }
+      }
+
+      deleteTask(id) {
+        this.tasks = this.tasks.filter(task => task.id !== id);
+        this.saveTasks();
+        this.render();
+      }
+
+      updateTask(id, newText) {
+        const task = this.tasks.find(task => task.id === id);
+        if (task) {
+          task.text = newText;
+          this.saveTasks();
+          this.render();
+        }
+      }
+
+      toggleTask(id) {
+        const task = this.tasks.find(task => task.id === id);
+        if (task) {
+          task.completed = !task.completed;
+          this.saveTasks();
+          this.render();
+        }
+      }
+
+      saveTasks() {
+        localStorage.setItem('simpleTodoTasks', JSON.stringify(this.tasks));
+      }
+
+      loadTasks() {
+        const savedTasks = localStorage.getItem('simpleTodoTasks');
+        if (savedTasks) {
+          this.tasks = JSON.parse(savedTasks);
+          // Update taskId to be one more than the highest existing ID
+          if (this.tasks.length > 0) {
+            this.taskId = Math.max(...this.tasks.map(task => task.id)) + 1;
+          }
+        }
+      }
+
+      render() {
+        this.taskList.innerHTML = '';
+
+        this.tasks.forEach(task => {
+          const taskElement = this.createTaskElement(task);
+          this.taskList.appendChild(taskElement);
+        });
+      }
+
+      createTaskElement(task) {
+        const li = document.createElement('li');
+        li.className = `task-item ${task.completed ? 'completed' : ''}`;
+        li.dataset.id = task.id;
+
+        li.innerHTML = `
+          <span class="task-text">${task.text}</span>
+          <div class="task-actions">
+            <button class="edit-btn" data-id="${task.id}">Edit</button>
+            <button class="toggle-btn" data-id="${task.id}">${task.completed ? 'Undo' : 'Complete'}</button>
+            <button class="delete-btn" data-id="${task.id}">Delete</button>
+          </div>
+        `;
+
+        // Add event listeners to the buttons
+        const editBtn = li.querySelector('.edit-btn');
+        const toggleBtn = li.querySelector('.toggle-btn');
+        const deleteBtn = li.querySelector('.delete-btn');
+
+        editBtn.addEventListener('click', () => {
+          this.handleEditTask(task.id);
+        });
+
+        toggleBtn.addEventListener('click', () => {
+          this.toggleTask(task.id);
+        });
+
+        deleteBtn.addEventListener('click', () => {
+          this.deleteTask(task.id);
+        });
+
+        return li;
+      }
+
+      handleEditTask(id) {
+        const task = this.tasks.find(task => task.id === id);
+        if (task) {
+          const newText = prompt('Edit task:', task.text);
+          if (newText !== null && newText.trim() !== '') {
+            this.updateTask(id, newText.trim());
+          }
+        }
+      }
+    }
+
+    // Initialize the app when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      new TodoApp();
+    });
+  </script>
+</body>
+</html>
